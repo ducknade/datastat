@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 #include <readline/readline.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
