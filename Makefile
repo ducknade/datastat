@@ -7,5 +7,5 @@ datastat.x: datastat.C
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 clean:
-	rm -f *.o 
+	rm -f *.o *.x 
 

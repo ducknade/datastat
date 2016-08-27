@@ -22,6 +22,8 @@
 #include <map>
 #include <string>
 
+#include "statjks.h"
+
 #define LOG_DEBUG 0
 
 using namespace std;
@@ -38,6 +40,9 @@ bool show_min = false;
 bool show_max = false;
 bool show_cnt = false;
 bool show_sum = false;
+
+bool show_atc = false;
+bool show_jkn = false;
 
 #if LOG_DEBUG
 #define log_noln(fmt, args...) do {	\
@@ -86,7 +91,7 @@ struct record {
 static long parse_fields(char *s) {
   long fields = 0;
   char *tok = strtok(s, ",");
-  chk_exit(tok != 0, "Wrong syntax for fields argument");
+  chk_exit((tok != 0), "Wrong syntax for fields argument");
   while (tok != NULL) {
     int i1, i2;
     if (sscanf(tok, "%d-%d", &i1, &i2) == 2) {
@@ -168,14 +173,14 @@ bool calculateMedian(vector<double> vals, double* median, int* medianPosLow, int
    }
    log("      medianPosLow (before): %d", *medianPosLow);
    log("      medianPosHigh(before): %d", *medianPosHigh);
-   for (size_t ii = *medianPosLow - 1; ii >= 0; ii--) {
+   for (int ii = *medianPosLow - 1; ii >= 0; ii--) {
       if (vals[ii] == *median) {
          *medianPosLow = ii;
       } else {
          break;
       }
    }
-   for (size_t ii = *medianPosLow + 1; ii < size; ++ii) {
+   for (int ii = *medianPosLow + 1; ii < size; ++ii) {
       if (vals[ii] == *median) {
          *medianPosHigh = ii;
       } else {
@@ -195,7 +200,7 @@ int main(int argc, char *argv[]) {
       exit(0);
     } else if (strcmp(*argv, "-k") == 0) {
       --argc;  ++argv;
-      chk_exit(argc > 0, "Option -k requires an argument");
+      chk_exit((argc > 0), "Option -k requires an argument");
       key_fields = parse_fields(*argv);
       log("Parsed key_fields: %ld", key_fields);
     } else if (strcmp(*argv, "--no-avg") == 0) {
@@ -216,9 +221,13 @@ int main(int argc, char *argv[]) {
       show_sum = true;
     } else if (strcmp(*argv, "--cnt") == 0) {
       show_cnt = true;
+    } else if (strcmp(*argv, "--atc") == 0) { // auto correlation
+      show_atc = true;
+    } else if (strcmp(*argv, "--jkn") == 0) { // jackknife standard deviation
+      show_jkn = true;
     } else {
       fin = fopen(*argv, "r");
-      chk_exit(fin != 0, "File not found: %s", *argv);
+      chk_exit((fin != 0), "File not found: %s", *argv);
     }
 
     --argc;  ++argv;
@@ -290,7 +299,7 @@ int main(int argc, char *argv[]) {
 	  const char *s = values[i].c_str();
 	  log("         values[%d]=%s", i, s);
 	  double d;
-	  chk_exit(sscanf(s, "%lf", &d) == 1, "Couldn't parse number");
+	  chk_exit((sscanf(s, "%lf", &d) == 1), "Couldn't parse number");
 	  log("      non_key_id=%d, r.v_sum.size()=%lu", non_key_id, r.v_sum.size());
 	  if (non_key_id >= (int)r.v_sum.size()) {
 	    r.v_sum.push_back(d);
@@ -345,6 +354,9 @@ int main(int argc, char *argv[]) {
   }
   if (show_cnt) {
      printf(" cnt");
+  }
+  if(show_jkn){
+     printf(" atc jkn");
   }
   printf("\n");
 
@@ -411,6 +423,21 @@ int main(int argc, char *argv[]) {
       if (show_sum) {
 	printf_sep("%g", accum.v_sum[i]);
       }
+
+// start jackson
+	if(show_jkn){
+		double atc = autoCorrelation(accum.v_val[i].data(), 
+								accum.v_val[i].size());
+		int binSize = (int)ceil(atc);
+		double avg_;
+		double jkn = jackknife(accum.v_val[i].data(),
+					accum.v_val[i].size(), binSize, avg_);
+		printf_sep("%g", atc);
+		printf_sep("%g", jkn);
+	}
+// end jackson
+
+
     }
     if (show_cnt) {
       printf_sep("%lu", accum.num);
@@ -496,6 +523,19 @@ int main(int argc, char *argv[]) {
 	  if (show_sum) {
 	    printf_sep("%g", r.v_sum[non_key_id]);
 	  }
+
+// start jackson
+	if(show_jkn){
+		double atc = autoCorrelation(accum.v_val[i].data(), 
+								accum.v_val[i].size());
+		int binSize = (int)ceil(atc);
+		double avg_;
+		double jkn = jackknife(accum.v_val[i].data(),
+					accum.v_val[i].size(), binSize, avg_);
+		printf_sep("%g", atc);
+		printf_sep("%g", jkn);
+	}
+// end jackson
 
 	  ++non_key_id;
 	}
