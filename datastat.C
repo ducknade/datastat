@@ -366,12 +366,12 @@ int main(int argc, char *argv[]) {
     double median;
     double thirdQuantile;
     for (int i = 0; i < (int)accum.v_sum.size(); ++i) {
-      double avg = accum.v_sum[i] / accum.num;
+      double avg = accum.v_sum[i] / accum.v_val[i].size();
       if (show_avg) {
 	printf_sep("%g", avg);
       }
       if (show_dev) {
-	printf_sep("%g", sqrt(accum.v_sqr[i]/accum.num - avg*avg));
+	printf_sep("%g", sqrt(accum.v_sqr[i] / accum.v_val[i].size() - avg * avg));
       }
       if (show_1qt||show_2qt||show_3qt) {                   // TODO
         int  medianPosLow;
@@ -461,7 +461,7 @@ int main(int argc, char *argv[]) {
 	  printf_sep("%s", key[key_id].c_str());
 	  ++key_id;
 	} else {
-	  double avg = r.v_sum[non_key_id] / r.num;
+	  double avg = r.v_sum[non_key_id] / r.v_val[non_key_id].size();
           double firstQuantile; // TODO
           double median;
           double thirdQuantile;
@@ -469,7 +469,8 @@ int main(int argc, char *argv[]) {
 	    printf_sep("%g", avg);
 	  }
 	  if (show_dev) {
-	    printf_sep("%g", sqrt(r.v_sqr[non_key_id]/r.num - avg*avg));
+	    printf_sep("%g", 
+	    	sqrt(r.v_sqr[non_key_id] / r.v_val[non_key_id].size() - avg * avg));
 	  }
           if (show_1qt||show_2qt||show_3qt) {                   // TODO
             int medianPosLow;
