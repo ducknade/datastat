@@ -127,45 +127,45 @@ int main(int argc, char *argv[]){
 	// end of reading and processing file... now output final info
 	printf("#");
 	if (show_avg) {
-	   printf("avg\t");
+	   printf("avg\t\t");
 	}
 	if (show_dev) {
-	   printf("dev\t");
+	   printf("dev\t\t");
 	}
 	if (show_min) {
-	   printf("min\t");
+	   printf("min\t\t");
 	}
 	if (show_max) {
-	   printf("max\t");
+	   printf("max\t\t");
 	}
 	if (show_sum) {
-	   printf("sum\t");
+	   printf("sum\t\t");
 	}
 	if(show_jkn){
-	   printf("atc\tjkn\t");
+	   printf("atc\t\tjkn\t\t");
 	}
 	if(show_cnt){
-	   printf("cnt\t");
+	   printf("cnt");
 	}
 	printf("\n");
 
 	for (int i = 0; i < (int)accum.v_sum.size(); ++i) {
 		double avg = accum.v_sum[i] / accum.v_val[i].size();
 		if (show_avg) {
-			printf("%g\t", avg);
+			printf("%.6e\t", avg);
 		}
 		if (show_dev) {
-			printf("%g\t", 
+			printf("%.6e\t", 
 			sqrt(accum.v_sqr[i] / accum.v_val[i].size() - avg * avg));
 		}
 		if (show_min) {
-			printf("%g\t", accum.v_min[i]);
+			printf("%.6e\t", accum.v_min[i]);
 		}
 		if (show_max) {
-			printf("%g\t", accum.v_max[i]);
+			printf("%.6e\t", accum.v_max[i]);
 		}
 		if (show_sum) {
-			printf("%g\t", accum.v_sum[i]);
+			printf("%.6e\t", accum.v_sum[i]);
 		}
 
 		// start jackson
@@ -176,8 +176,8 @@ int main(int argc, char *argv[]){
 			double avg_;
 			double jkn = jackknife(accum.v_val[i].data(),
 					accum.v_val[i].size(), binSize, avg_);
-			printf("%g\t", atc);
-			printf("%g\t", jkn);
+			printf("%.6e\t", atc);
+			printf("%.6e\t", jkn);
 		}
 		// end jackson
 		
