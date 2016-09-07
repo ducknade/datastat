@@ -4,7 +4,7 @@
 
 using namespace std;
 
-double autoCorrelation(double* data, int num);
+double autoCorrelation(vector<double> &data);
 double mean(double* data, int num, double& average);
 double mean1(double* data, int num, double& average);
 double correlator(double* data, int num, int m, double average);
@@ -13,29 +13,22 @@ double jackknife_2_log_dividing(double* data1, double* data2, int num, int binSi
 double jackknife_2_power_dividing(double* data1, double* data2, int num, int binSize, double power1, double power2, double& average);
 double jackknife_data_output(double* data, int num, int binSize, double& average, double* modified, int& modified_num);
 
-double autoCorrelation(double* data, int num)
+double autoCorrelation(vector<double> &data)
 {
-    double average = 0.0;
-    double tauSum = 0.0;
-    double std = 0.0;
-   	
-    std = mean(data, num, average);
-    
-    double C_0 = std * std;
+	double average = 0.;
+	double tauSum = 0.;
 
-	for(int n = 0; n < num / 10; n++){
-		double C_n = correlator(data, num, n, average);
-		if(C_n < 0)	break;
-		tauSum += C_n / (2 * C_0);
+	double std = mean(data.data(), data.size(), average);
+
+	double C0 = std * std;
+	double Cn;
+	for(int n = 0; n < data.size() / 10; n++){
+		Cn = correlator(data.data(), data.size(), n, average);
+		if(Cn < 0) break;
+		tauSum += Cn / (2 * C0);
 	}
 
-	for(int n = 1; n < num / 10; n++){
-		double C_n = correlator(data, num, -n, average);
-		if(C_n < 0)	break;
-		tauSum += C_n / (2 * C_0);
-	}
-	
-    return tauSum;
+	return tauSum * 2.;
 }
 
 double correlator(double* data, int num, int m, double average){
