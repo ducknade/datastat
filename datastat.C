@@ -45,7 +45,7 @@ void usage() {
 	printf("    --max ........... Show maximum\n");
 	printf("    --sum ........... Show sum\n");
 	printf("    --cnt ........... Show count of values\n");
-	printf("    --atc ........... Show autocorrelation time\n");
+	printf("    --atc ........... Show autocorrelation time in detail\n");
 	printf("    --jkn ........... Show jackknife standard deviation\n");
 }
 
@@ -183,6 +183,18 @@ int main(int argc, char *argv[]){
 		if (show_cnt) {
 		printf("%lu", accum.v_num[i]);
 		}
+
+		if(show_atc){
+			vector<double> series;
+			double atc = autoCorrelation(accum.v_val[i], series);
+			printf("\n---- auto-correlation time accumulate ----\n");
+			for(int j = 0; j < series.size(); j++){
+				printf("%d\t%.3f\n", j, series[j]);
+			}
+			printf("atc\t%.3f\n", atc);
+			printf("---- auto-correlation time accumulate ----\n");
+		}
+
 		printf("\n");
 	}
 }

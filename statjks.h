@@ -5,6 +5,7 @@
 using namespace std;
 
 double autoCorrelation(vector<double> &data);
+double autoCorrelation(vector<double> &data, vector<double> &series);
 double mean(double* data, int num, double& average);
 double mean1(double* data, int num, double& average);
 double correlator(double* data, int num, int m, double average);
@@ -22,10 +23,31 @@ double autoCorrelation(vector<double> &data)
 
 	double C0 = std * std;
 	double Cn;
-	for(int n = 0; n < data.size() / 10; n++){
+	for(int n = 0; n < data.size() / 2; n++){
 		Cn = correlator(data.data(), data.size(), n, average);
 		if(Cn < 0) break;
 		tauSum += Cn / (2 * C0);
+	}
+
+	return tauSum * 2.;
+}
+
+double autoCorrelation(vector<double> &data, vector<double> &series)
+{
+	double average = 0.;
+	double tauSum = 0.;
+
+	double std = mean(data.data(), data.size(), average);
+
+	series.clear();
+
+	double C0 = std * std;
+	double Cn;
+	for(int n = 0; n < data.size() / 2; n++){
+		Cn = correlator(data.data(), data.size(), n, average);
+		if(Cn < 0) break;
+		tauSum += Cn / (2 * C0);
+		series.push_back(Cn / (2 * C0));
 	}
 
 	return tauSum * 2.;
