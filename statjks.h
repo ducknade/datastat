@@ -144,7 +144,9 @@ double jackknife(double* data, int num, int binSize, double& average){
     }
     
     average = sum3 / (num / binSize);
-    return sqrt((sqrsum - (num / binSize) * average * average) * ((num / binSize) - 1) / (num / binSize));
+
+cout << (sqrsum - (num / binSize) * average * average) * ((num / binSize) - 1) / (num / binSize) << endl;
+	return sqrt((sqrsum - (num / binSize) * average * average) * ((num / binSize) - 1) / (num / binSize));
 }
 
 double jackknife_data_output(double* data, int num, int binSize, double& average, double* modified, int& modified_num){
