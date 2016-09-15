@@ -49,6 +49,16 @@ void usage() {
 	printf("    --jkn ........... Show jackknife standard deviation\n");
 }
 
+int ceil_tol(double input, double tol){
+    int ceil = (int)std::ceil(input);
+    int trun = (int)input;
+    if(input - trun < 1e-4){
+        return trun;
+    }else{
+        return ceil;
+    }    
+}
+
 int main(int argc, char *argv[]){
 	--argc;  
 	++argv;
@@ -171,7 +181,7 @@ int main(int argc, char *argv[]){
 		// start jackson
 		if(show_jkn){
 			double atc = autoCorrelation(accum.v_val[i]);
-			int binSize = (int)ceil(atc);
+			int binSize = ceil_tol(atc);
 			double avg_;
 			double jkn = jackknife(accum.v_val[i].data(),
 					accum.v_val[i].size(), binSize, avg_);
