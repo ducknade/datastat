@@ -181,7 +181,7 @@ int main(int argc, char *argv[]){
 		// start jackson
 		if(show_jkn){
 			double atc = autoCorrelation(accum.v_val[i]);
-			int binSize = ceil_tol(atc);
+			int binSize = ceil_tol(atc, 1e-4);
 			double avg_;
 			double jkn = jackknife(accum.v_val[i].data(),
 					accum.v_val[i].size(), binSize, avg_);
