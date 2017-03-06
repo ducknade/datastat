@@ -1,35 +1,42 @@
 #pragma once
 
 #include <cmath>
+#include <vector>
+#include <array>
 
 using namespace std;
 
-double autoCorrelation(vector<double> &data);
+double auto_correlation(vector<double> &data);
 double autoCorrelation(vector<double> &data, vector<double> &series);
 double mean(double* data, int num, double& average);
 double mean1(double* data, int num, double& average);
-double correlator(double* data, int num, int m, double average);
-double jackknife(double* data, int num, int binSize, double& average);
+double correlator(vector<double> &data, int m, double average);
+array<double, 2> jackknife(vector<double> &data, int bin_size);
 double jackknife_2_log_dividing(double* data1, double* data2, int num, int binSize, double& average);
 double jackknife_2_power_dividing(double* data1, double* data2, int num, int binSize, double power1, double power2, double& average);
 double jackknife_data_output(double* data, int num, int binSize, double& average, double* modified, int& modified_num);
 
-double autoCorrelation(vector<double> &data)
+double auto_correlation(vector<double> &data)
 {
 	double average = 0.;
-	double tauSum = 0.;
+	double tau_sum = 0.;
 
 	double std = mean(data.data(), data.size(), average);
 
 	double C0 = std * std;
+	if(C0 * C0 < 1e-8){
+		printf("C0 is too small:%.8e\n", C0);
+		return -1.;
+	}
 	double Cn;
-	for(int n = 0; n < data.size() / 2; n++){
-		Cn = correlator(data.data(), data.size(), n, average);
-		if(Cn < 0) break;
-		tauSum += Cn / (2 * C0);
+	for(long n = 0; n < data.size(); n++){
+		Cn = correlator(data, n, average);
+		printf("atc: %d\tC_n: %.8f\n", n, Cn);
+		if(Cn * Cn / (C0 * C0)< 1e-4) break;
+		tau_sum += Cn / (2. * C0);
 	}
 
-	return tauSum * 2.;
+	return tau_sum * 2.;
 }
 
 double autoCorrelation(vector<double> &data, vector<double> &series)
@@ -44,7 +51,7 @@ double autoCorrelation(vector<double> &data, vector<double> &series)
 	double C0 = std * std;
 	double Cn;
 	for(int n = 0; n < data.size() / 2; n++){
-		Cn = correlator(data.data(), data.size(), n, average);
+		Cn = correlator(data, n, average);
 		if(Cn < 0) break;
 		tauSum += Cn / (2 * C0);
 		series.push_back(Cn / (2 * C0));
@@ -53,25 +60,26 @@ double autoCorrelation(vector<double> &data, vector<double> &series)
 	return tauSum * 2.;
 }
 
-double correlator(double* data, int num, int m, double average){
+double correlator(vector<double> &data, int m, double average){
 	
-	double sum = 0.0;
-	double C_m = 0.0;
+	double sum = 0.;
+	double Cm = 0.;
 	
-    if (m > 0) {
-        for (int j = 0; j < num - m; j++) {
+    if(m > 0){
+#pragma omp parallel for reduction(+:sum)
+		for(int j = 0; j < data.size() - m; j++){
             sum += (data[j + m] - average) * (data[j] - average);
         }
-        C_m = (sum / (num - m));
-    }
-    else {
-        for (int j = - m; j < num; j++) {
+        Cm = (sum / (data.size() - m));
+    }else{
+#pragma omp parallel for reduction(+:sum)
+        for(int j = - m; j < data.size(); j++){
             sum += (data[j + m] - average) * (data[j] - average);
         }
-        C_m = (sum / (num + m));
+        Cm = (sum / (data.size() + m));
     }
 	
-	return C_m;
+	return Cm;
 }
 
 double mean(double* data, int num, double& average)
@@ -110,41 +118,51 @@ double mean1(double* data, int num, double& average)
     return std;
 }
 
-double jackknife(double* data, int num, int binSize, double& average){
+array<double, 2> jackknife(vector<double> &data, int bin_size){
     
-    double sum1 = 0.;
-    
-    double vbin[num / binSize];
-    double vjack[num / binSize];
-    
-	for(int i = 0; i < num; i++){
-		sum1 += data[i];
-		
-		if((i + 1) % binSize == 0){
-			vbin[(i + 1) / binSize - 1] = sum1 / binSize;			
-			sum1 = 0.;
+    double binning_sum = 0.;
+   
+	long binned_data_count = data.size() / bin_size;
+	vector<double> binned_data(0); binned_data.reserve(binned_data_count);
+	vector<double> knifed_data(0); knifed_data.reserve(binned_data_count);
+
+	for(long i = 0; i < data.size(); i++){
+		binning_sum += data[i];
+		if((i + 1) % bin_size == 0){
+			binned_data.push_back(binning_sum / bin_size);			
+			binning_sum = 0.;
 		}
 	}
 		
-	double sum2 = 0.;
-	for (int k = 0; k < num / binSize; k++) {
-        sum2 += vbin[k];
+	double knifing_sum = 0.;
+#pragma omp parallel for reduction(+:knifing_sum)
+	for(long i = 0; i < binned_data.size(); i++){
+        knifing_sum += binned_data[i];
     }
-		
-    for (int k = 0; k < num / binSize; k++) {
-        vjack[k] = (sum2 - vbin[k]) / (num / binSize - 1);
-    }
+#pragma omp parallel for		
+    for(long i = 0; i < binned_data.size(); i++){
+        knifed_data[i] = (knifing_sum - binned_data[i]) / (binned_data_count - 1);
+	}
 	
-    double sum3 = 0.;
-    double sqrsum = 0.;
+    long double sum = 0.L;
+    long double sigma_sum = 0.L;
 	
-    for (int k = 0; k < num / binSize; k++) {
-        sum3 += vjack[k];
-        sqrsum += vjack[k] * vjack[k];
+#pragma omp parallel for reduction(+:sum)
+    for(long i = 0; i < binned_data.size(); i++){
+        sum += knifed_data[i];
     }
-    
-    average = sum3 / (num / binSize);
-    return sqrt((sqrsum - (num / binSize) * average * average) * ((num / binSize) - 1) / (num / binSize));
+	long double average = sum / binned_data_count;
+#pragma omp parallel for reduction(+:sigma_sum)
+    for(long i = 0; i < binned_data.size(); i++){
+        sigma_sum += (knifed_data[i] - average) * (knifed_data[i] - average);
+    }   
+
+	
+	// printf("%.8f\t%.8f\n", average, sigma_sum);
+	double error = sqrt(sigma_sum * (binned_data_count - 1) / binned_data_count);
+
+	array<double, 2> ret; ret[0] = average; ret[1] = error;
+	return ret;
 }
 
 double jackknife_data_output(double* data, int num, int binSize, double& average, double* modified, int& modified_num){
