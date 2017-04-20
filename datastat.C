@@ -152,7 +152,7 @@ int main(int argc, char *argv[]){
 	   printf("sum\t\t");
 	}
 	if(show_jkn){
-	   printf("atc\t\tjkn\t\t");
+	   printf("atc\t\tjkn\t\tfmt\t\t");
 	}
 	if(show_cnt){
 	   printf("cnt");
@@ -180,13 +180,12 @@ int main(int argc, char *argv[]){
 
 		// start jackson
 		if(show_jkn){
-			double atc = autoCorrelation(accum.v_val[i]);
+			double atc = auto_correlation(accum.v_val[i]);
 			int binSize = ceil_tol(atc, 1e-4);
-			double avg_;
-			double jkn = jackknife(accum.v_val[i].data(),
-					accum.v_val[i].size(), binSize, avg_);
+			array<double, 2> res = jackknife(accum.v_val[i], binSize);
 			printf("%.6e\t", atc);
-			printf("%.6e\t", jkn);
+			printf("%.6e\t", res[1]);
+			printf("%s", format_error(res[0], res[1]).c_str());
 		}
 		// end jackson
 		
@@ -196,7 +195,7 @@ int main(int argc, char *argv[]){
 
 		if(show_atc){
 			vector<double> series;
-			double atc = autoCorrelation(accum.v_val[i], series);
+			double atc = auto_correlation(accum.v_val[i], series);
 			printf("\n---- auto-correlation time accumulate ----\n");
 			for(int j = 0; j < series.size(); j++){
 				printf("%d\t%.3f\n", j, series[j]);
