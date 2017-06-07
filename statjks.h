@@ -6,6 +6,14 @@
 
 using namespace std;
 
+template<class T>
+vector<T> construct_jackknife_sample(vector<T>& input, int skip, int bin){
+    typename vector<T>::const_iterator it = input.begin();
+    vector<T> front(it, it+skip*bin);
+    front.insert(front.end(), input.begin()+(skip+1)*bin, input.end());
+    return front;
+}
+
 double auto_correlation(vector<double> &data);
 double autoCorrelation(vector<double> &data, vector<double> &series);
 double mean(double* data, int num, double& average);
