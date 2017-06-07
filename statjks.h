@@ -3,6 +3,9 @@
 #include <cmath>
 #include <vector>
 #include <array>
+#include <string>
+#include <cstring>
+#include <cassert>
 
 using namespace std;
 
@@ -15,7 +18,7 @@ vector<T> construct_jackknife_sample(vector<T>& input, int skip, int bin){
 }
 
 double auto_correlation(vector<double> &data);
-double autoCorrelation(vector<double> &data, vector<double> &series);
+double auto_correlation(vector<double> &data, vector<double> &series);
 double mean(double* data, int num, double& average);
 double mean1(double* data, int num, double& average);
 double correlator(vector<double> &data, int m, double average);
@@ -32,14 +35,14 @@ double auto_correlation(vector<double> &data)
 	double std = mean(data.data(), data.size(), average);
 
 	double C0 = std * std;
-	if(C0 * C0 < 1e-8){
+	if(C0 < 1e-12){
 		printf("C0 is too small:%.8e\n", C0);
 		return -1.;
 	}
 	double Cn;
 	for(long n = 0; n < data.size(); n++){
 		Cn = correlator(data, n, average);
-		printf("atc: %d\tC_n: %.8f\n", n, Cn);
+		// printf("atc: %d\tC_n: %.8f\n", n, Cn);
 		if(Cn * Cn / (C0 * C0)< 1e-4) break;
 		tau_sum += Cn / (2. * C0);
 	}
@@ -47,7 +50,7 @@ double auto_correlation(vector<double> &data)
 	return tau_sum * 2.;
 }
 
-double autoCorrelation(vector<double> &data, vector<double> &series)
+double auto_correlation(vector<double> &data, vector<double> &series)
 {
 	double average = 0.;
 	double tauSum = 0.;
@@ -329,3 +332,21 @@ double jackknife_2_power_dividing(double* data1, double* data2, int num, int bin
     average = power_dividing_avg;
     return sqrt(sqrsum * (num / binSize - 1) / (num / binSize));
 }
+
+string format_error(double value, double error){
+	assert(error > 0.);
+	char output[512];
+	if(error > 10.){
+		sprintf(output, "%d(%d)", int(value), int(error));
+		return string(output);
+	}else if(error > 1.){
+		sprintf(output, "%0.1f(%0.1f)", value, error);
+	}else{
+		int d = int(2.-1E-12-log(error)/log(10.));
+		char format[512];
+		sprintf(format, "%%0.%df(%%d)", d);
+		sprintf(output, format, value, int(error*pow(10.,d)));
+	}
+	return string(output);
+}
+
